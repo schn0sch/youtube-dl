@@ -65,3 +65,36 @@ class YourPornIE(InfoExtractor):
             'age_limit': 18,
             'ext': 'mp4',
         }
+
+
+class YourPornSearchIE(InfoExtractor):
+    _VALID_URL = r'https?://(?:www\.)?sxyprn\.com/(?!blog/|post/)?(?P<id>.*)\.html(?:\?|#|$)'
+    _TESTS = []
+
+    def _real_extract(self, url):
+        search_id = self._match_id(url)
+
+        videos = []
+
+        # TODO playlist title
+
+        url = 'https://sxyprn.com/' + search_id + '.html'
+        while True:
+            print(url)
+            webpage = self._download_webpage(url, search_id)
+
+            ms = re.finditer(r"\shref='(?P<data>[^']*)'\s+class='js-pop'",
+                             webpage)
+            for m in ms:
+                video = clean_html(m.group('data')).strip()
+                video = urljoin(url, video)
+                videos.append(self.url_result(video, 'YourPorn'))
+
+            next_page = self._html_search_regex(r"<link rel='next' href='(?P<data>[^']*)",
+                                                webpage, 'next page',
+                                                group='data', default=None)
+            if not next_page:
+                break
+            url = urljoin(url, next_page)
+
+        return videos
